@@ -1,0 +1,155 @@
+	.pos 0 
+init:	irmovl Stack, %esp  	# Set up stack pointer  
+	irmovl Stack, %ebp  	# Set up base pointer   
+	call Main		# Execute main program
+	halt			# Terminate program 
+
+
+Main:	pushl %ebp 
+	rrmovl %esp,%ebp
+	
+	irmovl $36, %ebx		#set up stack for variables
+	subl %ebx, %esp
+	irmovl $2, %ecx			#building the array starts here
+	rmmovl %ecx, -36(%ebp)
+	irmovl $4, %ecx
+	rmmovl %ecx, -32(%ebp)
+	irmovl $5, %ecx
+	rmmovl %ecx, -28(%ebp)
+	irmovl $3, %ecx
+	rmmovl %ecx, -24(%ebp)
+	irmovl $6, %ecx
+	rmmovl %ecx, -20(%ebp)
+	irmovl $2, %ecx
+	rmmovl %ecx, -16(%ebp)		#and ends here
+	irmovl $3, %ecx
+	rmmovl %ecx, -40(%ebp)		#moves num_pairs (3) into -40(%ebp)
+	irmovl $8, %ebx
+	subl %ebx, %esp
+	mrmovl -40(%ebp), %edx		#moves num_pairs from memory to %edx to be pushed onto stack
+	pushl %edx			#pushes num_pairs onto stack
+	irmovl $-36, %eax		
+	addl %ebp, %eax			#%eax now contains starting address of array			
+	pushl	%eax			#%eax is pushed					
+	call	get_pair		#call get_pair
+
+	rrmovl %ebp,%esp
+	popl %ebp
+	ret 
+
+
+get_pair:
+	pushl %ebp			#function setup
+	rrmovl %esp,%ebp
+	irmovl $24, %ebx
+	subl %ebx, %esp			#int output_data
+	irmovl $1, %ecx
+	rmmovl %ecx, -16(%ebp)		#int x
+	jmp .L4
+
+.L5:
+	mrmovl 8(%ebp), %eax
+	irmovl $4, %ebx
+	addl %ebx, %eax
+	mrmovl (%eax), %edx
+	mrmovl 8(%ebp), %eax
+	mrmovl (%eax), %eax
+	irmovl $8, %ecx
+	subl %ecx, %esp
+	pushl %edx			#push the exponent
+	pushl %eax			#push the base
+	call raise2pwr			#call raise2pwr with (base, exponent)
+	brk
+	irmovl $16, %ecx
+	addl %ecx, %esp
+	irmovl $8, %ebx
+	mrmovl 8(%ebp), %ecx
+	addl %ebx, %ecx
+	rmmovl %ecx, 8(%ebp)
+	irmovl $1, %ebx			#move 1 into a register
+	mrmovl -16(%ebp), %ecx		#move i into a register
+	addl %ebx, %ecx			#add
+	rmmovl %ecx, -16(%ebp)		#i++
+
+.L4:
+	mrmovl -16(%ebp), %eax
+	rrmovl %eax, %esi
+	mrmovl 12(%ebp), %edi
+	subl %edi, %esi
+	jle .L5
+    	rrmovl %ebp,%esp		#function end 
+    	popl %ebp
+	ret				#return void
+
+raise2pwr:
+	pushl %ebp			#function setup
+	rrmovl %esp,%ebp
+	irmovl $24, %ecx
+	subl %ecx, %esp
+	irmovl $1, %ebx
+	rmmovl %ebx, -12(%ebp)
+	irmovl $1, %ebx
+	rmmovl %ebx, -16(%ebp)
+	jmp .L7
+
+.L8:
+	irmovl $8, %ecx
+	subl %ecx, %esp
+	mrmovl 8(%ebp), %edi		#push i 
+	pushl %edi
+	mrmovl -12(%ebp), %esi
+	pushl %esi			#push j
+	call mul_op			#call mul_op
+	irmovl $16, %ecx
+	addl %ecx, %esp
+	rmmovl %eax, -12(%ebp)
+	irmovl $1, %ebx			#move 1 into register
+	mrmovl -16(%ebp), %ecx		#move i into a register
+	addl %ebx, %ecx			#add
+	rmmovl %ecx, -16(%ebp)		#i++
+
+.L7:
+	mrmovl -16(%ebp), %eax		#move i into register
+	rrmovl %eax, %ebx
+	mrmovl 12(%ebp), %ecx		#move power into register
+	subl %ecx, %ebx			#compare power and i
+	jle .L8				#while (i <= power)
+	mrmovl -12(%ebp), %eax
+	rrmovl %ebp,%esp
+    	popl %ebp
+	ret				#return result
+
+mul_op:
+	pushl %ebp			#function setup
+	rrmovl %esp,%ebp
+	irmovl $16, %esi
+	subl %esi, %esp
+	mrmovl 8(%ebp), %eax
+	rmmovl %eax, -4(%ebp)	
+	jmp .L11
+
+.L12:
+	mrmovl 8(%ebp), %eax		#move i into a register
+	
+	mrmovl -4(%ebp), %edx		#move k into a register
+	addl %eax, %edx			#add
+	rmmovl %edx, -4(%ebp)		#k += i
+
+	irmovl $1, %edi			#move 1 into a register
+	mrmovl 12(%ebp), %esi		#move j into a register	
+	subl %edi, %esi			#subtract 1 from j
+	rmmovl %esi, 12(%ebp)		#j--
+
+.L11:
+	irmovl $1, %edi			#compare 1 to j
+	mrmovl 12(%ebp), %esi
+	subl %edi, %esi
+	jg .L12				#while (j > 1)
+	mrmovl -4(%ebp), %eax
+	rrmovl %ebp,%esp		#function end
+    	popl %ebp
+	ret				#return k
+
+# The stack starts here and grows to lower addresses
+	.pos 0x1000		
+Stack:	 
