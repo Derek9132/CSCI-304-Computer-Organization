@@ -1,0 +1,94 @@
+.pos 0
+Init:
+    irmovl Stack, %ebp
+    irmovl Stack, %esp
+    call Main
+    halt
+    
+    
+.align 4
+Input: .long 0x5    #
+       .long 0x4    #should become 
+       .long 0x3    #should become .long 0x3
+Done:  .long 0xFFFFFFFF
+    
+    
+Main:   
+    	pushl %ebp 
+	rrmovl %esp,%ebp
+
+	irmovl $-16, %edi	#set up stack pointers for variables
+	andl %edi, %esp
+	irmovl $48, %esi	#set up stack pointers for variables
+	subl %esi, %esp
+	irmovl Input, %ecx
+	rmmovl %ecx, 44(%esp)	#store starting address of array into memory at 44(%esp), int *ptr = array
+	jmp .L2
+
+	#rrmovl %ebp,%esp #dead code
+	#popl %ebp
+	#ret
+
+
+.L7:
+    mrmovl 44(%esp), %eax	#Move address of array from memory to %eax, int *ptr = array	
+    mrmovl 0(%eax), %eax
+    rmmovl %eax, 40(%esp)   	#int local = *ptr;
+    irmovl $1, %ecx     
+    rmmovl %ecx, 36(%esp)   	#int factor = 1
+    jmp .L3
+    
+.L6:
+    mrmovl 40(%esp), %eax	#Moves local into %eax	
+    rmmovl %eax, 32(%esp)	#Moves %eax into 32(%esp), int l_local = local
+    mrmovl 36(%esp), %eax	#Moves factor into %eax
+    rmmovl %eax, 28(%esp)	#Moves %eax into 28(%esp), int l_factor = factor 
+    jmp .L4
+
+.L5:
+    mrmovl 28(%esp), %eax	#Move l_factor into a register
+    mrmovl 36(%esp), %edx	#Move factor into a register
+    addl %edx, %eax		#Add
+    rmmovl %eax, 36(%esp)	#factor = factor + l_factor
+    irmovl $1, %edi		#moves 1 into a register
+    mrmovl 32(%esp), %edx	#moves 32(%esp) l_local into a register
+    subl %edi, %edx		#subtract
+    rmmovl %edx, 32(%esp)	#l_local--
+    
+
+.L4:
+    mrmovl 32(%esp), %esi	
+    irmovl $1, %edi
+    subl %edi, %esi		#compare l_local to 1
+    jg .L5			#while l_local > 1
+    mrmovl 40(%esp), %esi	#moves 40(%esp) local into a register
+    irmovl $1, %edi		#moves 1 into a register
+    subl %edi, %esi		#subtract
+    rmmovl %esi, 40(%esp)	#local--
+
+.L3:
+    mrmovl 40(%esp), %esi	#compare local and 0
+    irmovl $0, %edx
+    subl %edx, %esi
+    jne .L6			#while local != 0
+    irmovl $4, %edx
+    mrmovl 44(%esp), %ecx
+    addl %edx, %ecx
+    rmmovl %ecx, 44(%esp)
+    mrmovl	36(%esp), %eax	#Move factor into %eax
+    brk
+    rmmovl	%eax, 4(%esp) 	#result stored in %eax
+
+.L2:
+    mrmovl 44(%esp), %eax	#Move address of array into %eax, int *ptr = array
+    mrmovl 0(%eax), %eax	#Move value at ptr into %eax, *ptr
+    irmovl $-1, %ebx		#Compare *ptr to -1
+    subl %ebx, %eax		
+    jne .L7			#If *ptr != -1, jump to .L7
+
+rrmovl %ebp,%esp
+popl %ebp
+ret 
+
+.pos 0x1000
+Stack:	 
